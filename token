@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract MyToken is ERC20, Ownable {
+
+    constructor() ERC20("MyToken", "MTK") Ownable(msg.sender) {}
+
+    modifier onlyOwnerCanMint() {
+        require(_msgSender() == owner(), "Only the owner can create new tokens");
+        _;
+    }
+
+    modifier validRecipient(address recipient) {
+        require(recipient != address(0), "Invalid transfer recipient");
+        _;
+    }
+
+    function mint(address to, uint256 weigh) external onlyOwnerCanMint validRecipient(to) {
+        require(weigh > 0, "Please specify a positive weigh to create tokens");
+        _mint(to, weigh);
+    }
+
+    function burn(uint256 weigh) external {
+        require(weigh > 0, "Please specify a positive weigh to burn tokens");
+        require(weigh <= balanceOf(_msgSender()), "Not enough tokens to burn");
+        _burn(_msgSender(), weigh);
+    }
+
+    function transfer(address to, uint256 weigh) public override validRecipient(to) returns (bool) {
+        require(weigh > 0, "Please transfer a positive weigh of tokens");
+        require(weigh <= balanceOf(_msgSender()), "Not enough tokens for transfer");
+        _transfer(_msgSender(), to, weigh);
+        return true;
+    }
+
+    function setOwner(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "Invalid new owner address");
+        transferOwnership(newOwner);
+    }
+}
